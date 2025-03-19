@@ -3,11 +3,31 @@
 #include <cstdlib>
 
 using namespace std;
+float typechart[18][18] = {
+    // NOR  FIR  WAT  ELE  GRA  ICE  FIG  POI  GRO  FLY  PSY  BUG  ROC  GHO  DRA  DAR  STE NONE
+    { 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0.5, 0,   1,   1,   0.5, 1 }, // NOR
+    { 1,   0.5, 0.5, 1,   2,   2,   1,   1,   1,   1,   1,   2,   0.5, 1,   0.5, 1,   2,   1 }, // FIR
+    { 1,   2,   0.5, 1,   0.5, 1,   1,   1,   2,   1,   1,   1,   2,   1,   0.5, 1,   1,   1 }, // WAT
+    { 1,   1,   2,   0.5, 0.5, 1,   1,   1,   0,   2,   1,   1,   1,   1,   0.5, 1,   1,   1 }, // ELE
+    { 1,   0.5, 2,   1,   0.5, 1,   1,   0.5, 2,   0.5, 1,   0.5, 2,   1,   0.5, 1,   0.5, 1 }, // GRA
+    { 1,   0.5, 0.5, 1,   2,   0.5, 1,   1,   2,   2,   1,   1,   1,   1,   2,   1,   0.5, 1 }, // ICE
+    { 2,   1,   1,   1,   1,   2,   1,   0.5, 1,   0.5, 0.5, 0.5, 2,   0,   1,   2,   2,   1 }, // FIG
+    { 1,   1,   1,   1,   2,   1,   1,   0.5, 0.5, 1,   1,   1,   0.5, 0.5, 1,   1,   0,   1 }, // POI
+    { 1,   2,   1,   2,   0.5, 1,   1,   2,   1,   0,   1,   0.5, 2,   1,   1,   1,   2,   1 }, // GRO
+    { 1,   1,   1,   0.5, 2,   1,   2,   1,   1,   1,   1,   2,   0.5, 1,   1,   1,   0.5, 1 }, // FLY
+    { 1,   1,   1,   1,   1,   1,   2,   2,   1,   1,   0.5, 1,   1,   1,   1,   0,   0.5, 1 }, // PSY
+    { 1,   0.5, 1,   1,   2,   1,   0.5, 0.5, 1,   0.5, 2,   1,   1,   0.5, 1,   2,   0.5, 1 }, // BUG
+    { 1,   2,   1,   1,   1,   2,   0.5, 1,   0.5, 2,   1,   2,   1,   1,   1,   1,   0.5, 1 }, // ROC
+    { 0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   1,   1,   2,   1,   0.5, 1,   1 }, // GHO
+    { 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   1,   0.5, 1 }, // DRA
+    { 1,   1,   1,   1,   1,   1,   0.5, 1,   1,   1,   2,   1,   1,   2,   1,   0.5, 1,   1 }, // DAR
+    { 1,   0.5, 0.5, 0.5, 1,   2,   1,   1,   1,   1,   1,   1,   2,   1,   1,   1,   0.5, 1 }, // STE
+    { 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1 }  // NONE
+};
 
 enum class Typing 
 {
-    FIRE = 0, WATER, GRASS, ELECTRIC, PSYCHIC, DARK, FIGHTING, NORMAL, FLYING, GROUND, STEEL,
-    ICE, POISON, BUG, DRAGON, NONE
+    NORMAL = 0, FIRE, WATER, ELECTRIC, GRASS, ICE, FIGHTING, POISON, GROUND, FLYING, PSYCHIC, BUG, ROCK, GHOST, DRAGON, DARK, STEEL, NONE
 };
 
 string convertToString (Typing typing)
@@ -55,15 +75,15 @@ struct moveBehavior
 {
     string moveName;
     int movePower;
-    string moveType;
+    Typing moveType;
     int accuracy;
 
     friend ostream& operator<<(ostream& os, const moveBehavior& move) {
-        os << move.moveName << " (Power: " << move.movePower << ", Type: " << move.moveType << ", Accuracy: " << move.accuracy << ")";
+        os << move.moveName << " (Power: " << move.movePower << ", Type: " << convertToString(move.moveType) << ", Accuracy: " << move.accuracy << ")";
         return os;
     }
 
-    moveBehavior makeMoves (string moveName, int movePower, string moveType, int accuracy)
+    moveBehavior makeMoves (string moveName, int movePower, Typing moveType, int accuracy)
     {
         moveBehavior move;
         move.moveName = moveName;
@@ -141,10 +161,35 @@ int getRandom (int min, int max)
     return min + rand() % (max - min + 1);
 }
 
+float returnTypeMultiplier (moveBehavior move, Pokemon opponent)
+{   Typing movetype = move.moveType;
+    Typing opponentType1 = opponent.type1;
+    Typing opponentType2 = opponent.type2;
+    double multipler = typechart[static_cast<int>(movetype)][static_cast<int>(opponentType1)] * typechart[static_cast<int>(movetype)][static_cast<int>(opponentType2)];
+    return multipler;
+}
 
-void defineTyping()
+void displayTypeeffectiveness(float multiplier)
 {
-    //Make later
+    cout << endl;
+    if(multiplier == 0)
+    {
+        cout << "This move has no effect" << endl;
+    }
+    else if ((multiplier == 0.5) || (multiplier == 0.25))
+    {
+        cout << "It's not very effective" << endl;
+    }
+
+    else if (multiplier == 1)
+    {
+        cout << "";
+    }
+    else if ((multiplier == 2) || (multiplier == 4))
+    {
+        cout << "It's super effective" << endl;
+    }
+
 }
 
 int main ()
@@ -152,20 +197,19 @@ int main ()
     cout << "Battle Start!" << endl;
     moveBehavior moveI;
     Pokemon pkmnI;
-    Typing typeI;
-    moveBehavior pkmn1Move1 = moveI.makeMoves("FlameThrower", 90, "FIRE", 100);
-    moveBehavior pkmn1Move2 = moveI.makeMoves("Steel Wing", 75, "STEEL", 95);
-    moveBehavior pkmn1Move3 = moveI.makeMoves("Dragon Claw", 100, "DRAGON", 100);
-    moveBehavior pkmn1Move4 = moveI.makeMoves("Wing Attack", 60, "FLYING", 100);
+    moveBehavior pkmn1Move1 = moveI.makeMoves("FlameThrower", 90, Typing::FIRE, 100);
+    moveBehavior pkmn1Move2 = moveI.makeMoves("Steel Wing", 75, Typing::STEEL, 95);
+    moveBehavior pkmn1Move3 = moveI.makeMoves("Dragon Claw", 100, Typing::DRAGON, 100);
+    moveBehavior pkmn1Move4 = moveI.makeMoves("Wing Attack", 60, Typing::FLYING, 100);
 
     Pokemon pkmn1 = pkmnI.makePokemon("Charizard", Typing::FIRE, Typing::FLYING, 
          pkmn1Move1, pkmn1Move2 , pkmn1Move3 , pkmn1Move4,
          78, 0 , 84, 78, 109, 85, 100, 100);
     //pkmn1.viewPokemonDetails(pkmn1);
-    moveBehavior pkmn2Move1 = moveI.makeMoves("Hydro Pump", 110, "WATER", 80);
-    moveBehavior pkmn2Move2 = moveI.makeMoves("Surf", 90, "WATER", 100);
-    moveBehavior pkmn2Move3 = moveI.makeMoves("Ice Beam", 90, "ICE", 100);
-    moveBehavior pkmn2Move4 = moveI.makeMoves("Crunch", 80, "DARK", 100);
+    moveBehavior pkmn2Move1 = moveI.makeMoves("Hydro Pump", 110, Typing::WATER, 80);
+    moveBehavior pkmn2Move2 = moveI.makeMoves("Surf", 90, Typing::WATER, 100);
+    moveBehavior pkmn2Move3 = moveI.makeMoves("Ice Beam", 90, Typing::ICE, 100);
+    moveBehavior pkmn2Move4 = moveI.makeMoves("Crunch", 80, Typing::DARK, 100);
     
 
     Pokemon pkmn2 = pkmnI.makePokemon("Blastoise", Typing::WATER, Typing::NONE,
@@ -205,8 +249,8 @@ int main ()
             case 1:
                 //Fight Menu
                 cout << "Choose move: " << endl;
-                cout << "1. " << pkmn1.move1.moveName << "       2. " << pkmn1.move2.moveName << endl;
-                cout << "3. " << pkmn1.move3.moveName << "       4. " << pkmn1.move4.moveName << endl;
+                cout << "1. " << pkmn1.move1.moveName << " (" << convertToString(pkmn1.move1.moveType) << ")       2. " << pkmn1.move2.moveName << " (" << convertToString(pkmn1.move2.moveType) << ")" << endl;
+                cout << "3. " << pkmn1.move3.moveName << " (" << convertToString(pkmn1.move3.moveType) << ")       4. " << pkmn1.move4.moveName << " (" << convertToString(pkmn1.move4.moveType) << ")" << endl;
                 int moveChoice;
                 cin >> moveChoice;
                 cout << "You chose move: ";
@@ -214,7 +258,10 @@ int main ()
                 {
                     case 1:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move1.moveName << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - calculateDamage(pkmn1, pkmn2, pkmn1.move1);
+                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move1, pkmn2) << endl;
+                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move1)*returnTypeMultiplier(pkmn1.move1, pkmn2));
+                    displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move1, pkmn2));
+                    
                     if(pkmn1.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
@@ -224,9 +271,14 @@ int main ()
                     cout << pkmn2.pokemonName << "'s HP is: " << pkmn2.battlehp << endl;
                     }
                     break;
+
+
+
                     case 2:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move2.moveName << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - calculateDamage(pkmn1, pkmn2, pkmn1.move2);
+                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move2, pkmn2) << endl;
+                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move2)*returnTypeMultiplier(pkmn1.move2, pkmn2));
+                    displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move2, pkmn2));
                     if(pkmn1.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
@@ -236,9 +288,14 @@ int main ()
                     cout << pkmn2.pokemonName << "'s HP is: " << pkmn2.battlehp << endl;
                     }
                     break;
+
+
+
                     case 3:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move3.moveName << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - calculateDamage(pkmn1, pkmn2, pkmn1.move3);
+                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move3, pkmn2) << endl;
+                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move3)*returnTypeMultiplier(pkmn1.move3, pkmn2));
+                    displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move3, pkmn2));
                     if(pkmn1.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
@@ -249,8 +306,13 @@ int main ()
                     }
                     break;
                     case 4:
+
+
+
                         cout << pkmn1.pokemonName << " used " << pkmn1.move4.moveName << endl;
-                        pkmn2.battlehp = pkmn2.battlehp - calculateDamage(pkmn1, pkmn2, pkmn1.move4);
+                        cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move4, pkmn2) << endl;
+                        pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move4)*returnTypeMultiplier(pkmn1.move4, pkmn2));
+                        displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move4, pkmn2));
                         if(pkmn1.battlehp <= 0)
                         {
                             pkmn2.battlehp = 0;
@@ -284,7 +346,8 @@ int main ()
                 {
                     case 1:
                         cout << pkmn2.pokemonName << " used " << pkmn2.move1.moveName << endl;
-                        pkmn1.battlehp = pkmn1.battlehp - calculateDamage(pkmn2, pkmn1, pkmn2.move1);
+                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move1)*returnTypeMultiplier(pkmn2.move1, pkmn1));
+                        displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move1, pkmn1));
                         if(pkmn2.battlehp <= 0)
                         {
                             pkmn2.battlehp = 0;
@@ -295,9 +358,13 @@ int main ()
                             cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
                         }
                         break;
+
+
+
                     case 2:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move2.moveName << endl;
-                    pkmn1.battlehp = pkmn1.battlehp - calculateDamage(pkmn2, pkmn1, pkmn2.move2);
+                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move2)*returnTypeMultiplier(pkmn2.move2, pkmn1));
+                    displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move2, pkmn1));
                     if(pkmn2.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
@@ -309,9 +376,13 @@ int main ()
                         cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
                     }
                     break;
+
+
+
                     case 3:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move3.moveName << endl;
-                    pkmn1.battlehp = pkmn1.battlehp - calculateDamage(pkmn2, pkmn1, pkmn2.move3);
+                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move3)*returnTypeMultiplier(pkmn2.move3, pkmn1));
+                    displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move3, pkmn1));
                     if(pkmn2.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
@@ -322,9 +393,13 @@ int main ()
                         cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
                     }
                     break;
+
+
+
                     case 4:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move4.moveName << endl;
-                        pkmn1.battlehp = pkmn1.battlehp - calculateDamage(pkmn2, pkmn1, pkmn2.move4);
+                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move4)*returnTypeMultiplier(pkmn2.move4, pkmn1));
+                        displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move4, pkmn1));
                         if(pkmn2.battlehp <= 0)
                         {
                             pkmn2.battlehp = 0;
