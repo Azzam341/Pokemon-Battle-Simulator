@@ -4,6 +4,53 @@
 
 using namespace std;
 
+enum class Typing 
+{
+    FIRE = 0, WATER, GRASS, ELECTRIC, PSYCHIC, DARK, FIGHTING, NORMAL, FLYING, GROUND, STEEL,
+    ICE, POISON, BUG, DRAGON, NONE
+};
+
+string convertToString (Typing typing)
+{
+    switch (typing)
+    {
+        case Typing::FIRE:
+            return "FIRE";
+        case Typing::WATER:
+            return "WATER";
+        case Typing::GRASS:
+            return "GRASS";
+        case Typing::ELECTRIC:
+            return "ELECTRIC";
+        case Typing::PSYCHIC:
+            return "PSYCHIC";
+        case Typing::DARK:
+            return "DARK";
+        case Typing::FIGHTING:
+            return "FIGHTING";
+        case Typing::NORMAL:
+            return "NORMAL";
+        case Typing::FLYING:
+            return "FLYING";
+        case Typing::GROUND:
+            return "GROUND";
+        case Typing::STEEL:
+            return "STEEL";
+        case Typing::ICE:
+            return "ICE";
+        case Typing::POISON:
+            return "POISON";
+        case Typing::BUG:
+            return "BUG";
+        case Typing::DRAGON:
+            return "DRAGON";
+        case Typing::NONE:
+            return "NONE";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 struct moveBehavior
 {
     string moveName;
@@ -32,12 +79,16 @@ struct Pokemon
     string pokemonName;
     moveBehavior move1, move2, move3, move4;
     int atk, dfs, spatk, spdfs, speed, basehp, battlehp, level;
+    Typing type1;
+    Typing type2;
     
-    Pokemon makePokemon (string pokemonName, moveBehavior move1, moveBehavior move2, moveBehavior move3,
+    Pokemon makePokemon (string pokemonName,Typing type1, Typing type2, moveBehavior move1, moveBehavior move2, moveBehavior move3,
         moveBehavior move4, int basehp, int battlehp, int atk,  int dfs, int spatk, int spdfs, int speed, int level)
     {
         Pokemon pokemon;
         pokemon.pokemonName = pokemonName;
+        pokemon.type1 = type1;
+        pokemon.type2 = type2;
         pokemon.move1 = move1;
         pokemon.move2 = move2;
         pokemon.move3 = move3;
@@ -56,6 +107,7 @@ struct Pokemon
     void viewPokemonDetails(Pokemon pokemon)
     {
         cout << "Pokemon name is " << pokemon.pokemonName << endl;
+        cout << "Pokemon's typing is " << convertToString(pokemon.type1) << " " << convertToString(pokemon.type2) << endl;
         cout << "Move 1: " << pokemon.move1 << endl;
         cout << "Move 2: " << pokemon.move2 << endl;
         cout << "Move 3: " << pokemon.move3 << endl;
@@ -100,25 +152,28 @@ int main ()
     cout << "Battle Start!" << endl;
     moveBehavior moveI;
     Pokemon pkmnI;
+    Typing typeI;
     moveBehavior pkmn1Move1 = moveI.makeMoves("FlameThrower", 90, "FIRE", 100);
     moveBehavior pkmn1Move2 = moveI.makeMoves("Steel Wing", 75, "STEEL", 95);
     moveBehavior pkmn1Move3 = moveI.makeMoves("Dragon Claw", 100, "DRAGON", 100);
     moveBehavior pkmn1Move4 = moveI.makeMoves("Wing Attack", 60, "FLYING", 100);
 
-    Pokemon pkmn1 = pkmnI.makePokemon("Charizard", pkmn1Move1, pkmn1Move2 , pkmn1Move3 , pkmn1Move4,
+    Pokemon pkmn1 = pkmnI.makePokemon("Charizard", Typing::FIRE, Typing::FLYING, 
+         pkmn1Move1, pkmn1Move2 , pkmn1Move3 , pkmn1Move4,
          78, 0 , 84, 78, 109, 85, 100, 100);
-    //viewPokemonDetails(pkmn1);
+    //pkmn1.viewPokemonDetails(pkmn1);
     moveBehavior pkmn2Move1 = moveI.makeMoves("Hydro Pump", 110, "WATER", 80);
     moveBehavior pkmn2Move2 = moveI.makeMoves("Surf", 90, "WATER", 100);
     moveBehavior pkmn2Move3 = moveI.makeMoves("Ice Beam", 90, "ICE", 100);
     moveBehavior pkmn2Move4 = moveI.makeMoves("Crunch", 80, "DARK", 100);
     
 
-    Pokemon pkmn2 = pkmnI.makePokemon("Blastoise", pkmn2Move1, pkmn2Move2, pkmn2Move3, pkmn2Move4,
+    Pokemon pkmn2 = pkmnI.makePokemon("Blastoise", Typing::WATER, Typing::NONE,
+         pkmn2Move1, pkmn2Move2, pkmn2Move3, pkmn2Move4,
         79, 0 , 83, 100, 85, 105, 78, 100);
         pkmn1.battlehp = calculateBattleHP(pkmn1);
         pkmn2.battlehp = calculateBattleHP(pkmn2);
-    //viewPokemonDetails(pkmn2);
+    //pkmn2.viewPokemonDetails(pkmn2);
     //Main Battle Menu
     bool isvalid = true;
     while (isvalid)
@@ -134,7 +189,7 @@ int main ()
             isvalid= false;
         }
         else{
-        cout << "Player Pokemon" << pkmn1.pokemonName << endl;
+        cout << "Player Pokemon " << pkmn1.pokemonName << endl;
         
         cout << " HP: " << pkmn1.battlehp << endl;
         cout << "Opponent Pokemon " << pkmn2.pokemonName << endl;
