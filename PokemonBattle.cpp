@@ -1,6 +1,8 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <vector>
+#include <iomanip>
 
 using namespace std;
 float typechart[18][18] = {
@@ -21,7 +23,7 @@ float typechart[18][18] = {
     { 0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   1,   1,   2,   1,   0.5, 1,   1 }, // GHO
     { 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   2,   1,   0.5, 1 }, // DRA
     { 1,   1,   1,   1,   1,   1,   0.5, 1,   1,   1,   2,   1,   1,   2,   1,   0.5, 1,   1 }, // DAR
-    { 1,   0.5, 0.5, 0.5, 1,   2,   1,   1,   1,   1,   1,   1,   2,   1,   1,   1,   0.5, 1 }, // STE
+    { 1,   0.5, 0.5, 0.5, 1,   2,   1,   1,   1,   1,   1,   1,   2,   1,   1,   1,   0.5, 1}, // STE
     { 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1 }  // NONE
 };
 
@@ -148,14 +150,6 @@ int calculateBattleHP (Pokemon pkmn1)
     return HP; 
 }
 
-int calculateDamage(Pokemon pkmn1, Pokemon pkmn2, moveBehavior move) {
-    double levelFactor = ((2.0 * pkmn1.level) / 5.0) + 2;
-    double attackDefenseRatio = (double)pkmn1.atk / (double)pkmn2.dfs; // Ensure floating-point division
-    double baseDamage = ((levelFactor * move.movePower * attackDefenseRatio) / 50.0) + 2;
-    
-    return (int)baseDamage;
-}
-
 int getRandom (int min, int max)
 {
     return min + rand() % (max - min + 1);
@@ -192,12 +186,76 @@ void displayTypeeffectiveness(float multiplier)
 
 }
 
+
+float returnSameTypeAttackBonus(Pokemon pkmn, moveBehavior move)
+{
+    if ((pkmn.type1 == move.moveType) || (pkmn.type2 == move.moveType))
+    {
+        return 1.5;
+    }
+    return 1.0;
+}
+
+int calculateDamage(Pokemon pkmn1, Pokemon pkmn2, moveBehavior move) {
+    double levelFactor = ((2.0 * pkmn1.level) / 5.0) + 2;
+    double attackDefenseRatio = (double)pkmn1.atk / (double)pkmn2.dfs; // Ensure floating-point division
+    double baseDamage = ((levelFactor * move.movePower * attackDefenseRatio) / 50.0) + 2;
+	float dmgtypemultiplier = returnTypeMultiplier(move, pkmn2);
+	float dmgstabmultiplier = returnSameTypeAttackBonus(pkmn1, move);
+	double finaldamage = baseDamage*dmgtypemultiplier*dmgstabmultiplier;
+    return (int)finaldamage;
+}
+
+struct HealingItems
+{
+    string name;
+    int healedAmount;
+    int quantity;
+
+    HealingItems makeHealingItems(string name, int healedAmount, int quantity)
+    {
+        HealingItems item;
+        item.name = name;
+        item.healedAmount = healedAmount;
+        item.quantity = quantity;
+        return item;
+    }
+
+    int heal (Pokemon &pkmn, HealingItems &item)
+    {
+        
+        if (item.quantity > 0)
+        {
+        int currenthp = pkmn.battlehp;
+        int maxhp = calculateBattleHP(pkmn);
+        int recoveredHp = item.healedAmount;
+        currenthp = currenthp + recoveredHp;
+        if(currenthp > maxhp)
+        {
+            currenthp = maxhp;
+            item.quantity = item.quantity - 1;
+            return currenthp;
+        }
+        item.quantity = item.quantity - 1;
+        return currenthp;
+    }
+    else
+    {
+        cout << "No item left in inventory" << endl;
+        return pkmn.battlehp;
+    }
+    }
+
+};
+
+
+
 int main ()
 {
     cout << "Battle Start!" << endl;
     moveBehavior moveI;
     Pokemon pkmnI;
-    moveBehavior pkmn1Move1 = moveI.makeMoves("FlameThrower", 90, Typing::FIRE, 100);
+    moveBehavior pkmn1Move1 = moveI.makeMoves("Flamethrower", 100, Typing::FIRE, 100);
     moveBehavior pkmn1Move2 = moveI.makeMoves("Steel Wing", 75, Typing::STEEL, 95);
     moveBehavior pkmn1Move3 = moveI.makeMoves("Dragon Claw", 100, Typing::DRAGON, 100);
     moveBehavior pkmn1Move4 = moveI.makeMoves("Wing Attack", 60, Typing::FLYING, 100);
@@ -205,7 +263,20 @@ int main ()
     Pokemon pkmn1 = pkmnI.makePokemon("Charizard", Typing::FIRE, Typing::FLYING, 
          pkmn1Move1, pkmn1Move2 , pkmn1Move3 , pkmn1Move4,
          78, 0 , 84, 78, 109, 85, 100, 100);
-    //pkmn1.viewPokemonDetails(pkmn1);
+    HealingItems hi;
+    HealingItems potion = hi.makeHealingItems("Potion", 20, 10);
+    HealingItems superPotion = hi.makeHealingItems("Super Potion", 50, 7);
+    HealingItems hyperPotion = hi.makeHealingItems("Hyper Potion", 120, 5);
+    HealingItems maxPotion = hi.makeHealingItems("Max Potion", 1000, 5);
+
+
+    vector <HealingItems> healingitemslist;
+    healingitemslist.push_back(potion);
+    healingitemslist.push_back(superPotion);
+    healingitemslist.push_back(hyperPotion);
+    healingitemslist.push_back(maxPotion);
+
+
     moveBehavior pkmn2Move1 = moveI.makeMoves("Hydro Pump", 110, Typing::WATER, 80);
     moveBehavior pkmn2Move2 = moveI.makeMoves("Surf", 90, Typing::WATER, 100);
     moveBehavior pkmn2Move3 = moveI.makeMoves("Ice Beam", 90, Typing::ICE, 100);
@@ -217,22 +288,10 @@ int main ()
         79, 0 , 83, 100, 85, 105, 78, 100);
         pkmn1.battlehp = calculateBattleHP(pkmn1);
         pkmn2.battlehp = calculateBattleHP(pkmn2);
-    //pkmn2.viewPokemonDetails(pkmn2);
-    //Main Battle Menu
+
     bool isvalid = true;
     while (isvalid)
     {
-        if(pkmn1.battlehp <= 0)
-        {
-            cout << "Opponent " << pkmn2.pokemonName << " won. You lost" << endl;
-            isvalid= false;
-        }
-        else if(pkmn2.battlehp <= 0)
-        {
-            cout << "Opponent " << pkmn2.pokemonName << " lost. You won!" << endl;
-            isvalid= false;
-        }
-        else{
         cout << "Player Pokemon " << pkmn1.pokemonName << endl;
         
         cout << " HP: " << pkmn1.battlehp << endl;
@@ -258,11 +317,10 @@ int main ()
                 {
                     case 1:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move1.moveName << endl;
-                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move1, pkmn2) << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move1)*returnTypeMultiplier(pkmn1.move1, pkmn2));
+                    pkmn2.battlehp = pkmn2.battlehp - calculateDamage(pkmn1, pkmn2, pkmn1.move1);
                     displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move1, pkmn2));
                     
-                    if(pkmn1.battlehp <= 0)
+                    if(pkmn2.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
                         cout << pkmn2.pokemonName << "'s HP is: " << 0 << endl;
@@ -276,10 +334,9 @@ int main ()
 
                     case 2:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move2.moveName << endl;
-                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move2, pkmn2) << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move2)*returnTypeMultiplier(pkmn1.move2, pkmn2));
+                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move2));
                     displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move2, pkmn2));
-                    if(pkmn1.battlehp <= 0)
+                    if(pkmn2.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
                         cout << pkmn2.pokemonName << "'s HP is: " << 0 << endl;
@@ -293,10 +350,9 @@ int main ()
 
                     case 3:
                     cout << pkmn1.pokemonName << " used " << pkmn1.move3.moveName << endl;
-                    cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move3, pkmn2) << endl;
-                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move3)*returnTypeMultiplier(pkmn1.move3, pkmn2));
+                    pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move3));
                     displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move3, pkmn2));
-                    if(pkmn1.battlehp <= 0)
+                    if(pkmn2.battlehp <= 0)
                     {
                         pkmn2.battlehp = 0;
                         cout << pkmn2.pokemonName << "'s HP is: " << 0 << endl;
@@ -310,10 +366,9 @@ int main ()
 
 
                         cout << pkmn1.pokemonName << " used " << pkmn1.move4.moveName << endl;
-                        cout << "Type Multiplier: " << returnTypeMultiplier(pkmn1.move4, pkmn2) << endl;
-                        pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move4)*returnTypeMultiplier(pkmn1.move4, pkmn2));
+                        pkmn2.battlehp = pkmn2.battlehp - (calculateDamage(pkmn1, pkmn2, pkmn1.move4));
                         displayTypeeffectiveness(returnTypeMultiplier(pkmn1.move4, pkmn2));
-                        if(pkmn1.battlehp <= 0)
+                        if(pkmn2.battlehp <= 0)
                         {
                             pkmn2.battlehp = 0;
                             cout << pkmn2.pokemonName << "'s HP is: " << 0 << endl;
@@ -327,9 +382,48 @@ int main ()
                         break;
                 }
                 break;
-            case 2:
-                //Bag Menu
+                case 2:
+                {
+                    int option;
+                    int i = 1;
+                    cout << left << setw(15) << "Name" << setw(12) << "Heal Amount" << setw(10) << "Quantity" << endl;
+                    for (HealingItems &h : healingitemslist) {
+                        cout << i << ". " << left << setw(14) << h.name 
+                             << setw(12) << h.healedAmount 
+                             << setw(10) << h.quantity << endl;
+                        i++;
+                    }
+                        cout << "Choose item (enter no)" << endl;
+                        cin >> option;
+                        switch (option)
+                        {
+                            case 1:
+                                pkmn1.battlehp = healingitemslist[0].heal(pkmn1, healingitemslist[0]);
+                                cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
+                                break;
+                            case 2:
+                                pkmn1.battlehp = healingitemslist[1].heal(pkmn1, healingitemslist[1]);
+                                cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
+                                break;
+                            case 3:
+                                pkmn1.battlehp = healingitemslist[2].heal(pkmn1, healingitemslist[2]);
+                                cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
+                                break;
+                            case 4:
+                                pkmn1.battlehp = healingitemslist[3].heal(pkmn1, healingitemslist[3]);
+                                cout << pkmn1.pokemonName << "'s HP is: " << pkmn1.battlehp << endl;
+                                break;
+                            case 5:
+                                cout << "Back to menu" << endl;
+                                break;
+                            default:
+                                cout << "Invalid item choice!" << endl;
+                                break;
+                        
+                    }
+                }
                 break;
+                
             case 3:
                 //Pokemon Party
                 break;
@@ -339,18 +433,25 @@ int main ()
                 break;
         }
 
+        if(pkmn2.battlehp <= 0)
+        {
+            cout << "Opponent Lost. You win!" << endl;
+            return 0;
+        }
+
         cout <<endl<< "Opponent's Turn" << endl;
         srand(time(0));
-        int opponentChoice = getRandom(1,4);
+        //int opponentChoice = getRandom(1,4);
+        int opponentChoice = 4;
         switch (opponentChoice)
                 {
                     case 1:
                         cout << pkmn2.pokemonName << " used " << pkmn2.move1.moveName << endl;
-                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move1)*returnTypeMultiplier(pkmn2.move1, pkmn1));
+                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move1));
                         displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move1, pkmn1));
-                        if(pkmn2.battlehp <= 0)
+                        if(pkmn1.battlehp <= 0)
                         {
-                            pkmn2.battlehp = 0;
+                            pkmn1.battlehp = 0;
                             cout << pkmn1.pokemonName << "'s HP is: " << 0 << endl;
                         }
                         else
@@ -363,11 +464,11 @@ int main ()
 
                     case 2:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move2.moveName << endl;
-                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move2)*returnTypeMultiplier(pkmn2.move2, pkmn1));
+                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move2));
                     displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move2, pkmn1));
-                    if(pkmn2.battlehp <= 0)
+                    if(pkmn1.battlehp <= 0)
                     {
-                        pkmn2.battlehp = 0;
+                        pkmn1.battlehp = 0;
                         cout << pkmn1.pokemonName << "'s HP is: " << 0 << endl;
                     }
                     else
@@ -381,11 +482,11 @@ int main ()
 
                     case 3:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move3.moveName << endl;
-                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move3)*returnTypeMultiplier(pkmn2.move3, pkmn1));
+                    pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move3));
                     displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move3, pkmn1));
-                    if(pkmn2.battlehp <= 0)
+                    if(pkmn1.battlehp <= 0)
                     {
-                        pkmn2.battlehp = 0;
+                        pkmn1.battlehp = 0;
                         cout << pkmn1.pokemonName << "'s HP is: " << 0 << endl;
                     }
                     else
@@ -398,11 +499,11 @@ int main ()
 
                     case 4:
                     cout << pkmn2.pokemonName << " used " << pkmn2.move4.moveName << endl;
-                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move4)*returnTypeMultiplier(pkmn2.move4, pkmn1));
+                        pkmn1.battlehp = pkmn1.battlehp - (calculateDamage(pkmn2, pkmn1, pkmn2.move4));
                         displayTypeeffectiveness(returnTypeMultiplier(pkmn2.move4, pkmn1));
-                        if(pkmn2.battlehp <= 0)
+                        if(pkmn1.battlehp <= 0)
                         {
-                            pkmn2.battlehp = 0;
+                            pkmn1.battlehp = 0;
                             cout << pkmn1.pokemonName << "'s HP is: " << 0 << endl;
                         }
                         else
@@ -414,7 +515,13 @@ int main ()
                         cout << "Invalid move choice!" << endl;
                         break;
                 }
+                if(pkmn1.battlehp <= 0)
+                {
+                    cout << "You Lost. Foe " << pkmn2.pokemonName <<" win!" << endl;
+                    return 0;
+                }
 
-    }
+    
 }
+                
 }
